@@ -208,6 +208,11 @@ where
         }
     }
 
+    /// Returns true if there are no packets in the jitter buffer
+    pub fn is_empty(&self) -> bool {
+        self.heap.is_empty()
+    }
+
     /// Drops all packets in the jitter buffer
     pub fn clear(&mut self) {
         self.last = None;

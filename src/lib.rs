@@ -90,7 +90,24 @@ where
     /// Hint: This will return `None` if the next packet expected
     /// (by sequence number) was lost. Most audio and video codecs used for
     /// realtime streaming support inference of lost packets.
+    /// Pop the next packet from the jitter buffer
+    ///
+    /// Hint: This will return `None` if the next packet expected
+    /// (by sequence number) was lost. Most audio and video codecs used for
+    /// realtime streaming support inference of lost packets.
     pub fn pop(&mut self) -> Option<P> {
+        self.pop_skip(false)
+    }
+
+    /// Pop the next packet from the jitter buffer
+    ///
+    /// Unlike `pop`, if `allow_skip` is true, `pop_next` will not return
+    /// None, and skip to the next available packet.
+    ///
+    /// Hint: This will return `None` if the next packet expected
+    /// (by sequence number) was lost. Most audio and video codecs used for
+    /// realtime streaming support inference of lost packets.
+    pub fn pop_skip(&mut self, allow_skip: bool) -> Option<P> {
         if self.heap.is_empty() {
             return None;
         }
@@ -126,7 +143,9 @@ where
             }
         };
 
-        let packet = if next_sequence == (u16::from(last.sequence_number).wrapping_add(1)).into() {
+        let packet = if next_sequence == (u16::from(last.sequence_number).wrapping_add(1)).into()
+            || allow_skip
+        {
             match self.heap.pop() {
                 Some(packet) => packet.into(),
                 None => {
@@ -206,6 +225,11 @@ where
             }
             None => 0,
         }
+    }
+
+    /// Returns true if there are no packets in the jitter buffer
+    pub fn is_empty(&self) -> bool {
+        self.heap.is_empty()
     }
 
     /// Drops all packets in the jitter buffer
